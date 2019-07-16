@@ -1,7 +1,11 @@
 #include <iostream>
+#include <fstream>
+#include <cassert>
 #include <algorithm>
 
 using namespace std;
+
+typedef long long ll;
 
 class Tree{
     struct Node{
@@ -16,20 +20,26 @@ public:
     void  insert(int val){
         root = _insert(root, val);
     }
-    void inorder(){
+    void inorder()const{
         _inorder(root);
     }
-    void preorder(){
+    void preorder()const{
         _preorder(root);
     }
-    void removeNode(int val){
-        root = _removeNode(root, val);
+    void remove(int val){
+        root = _remove(root, val);
     }
-    long long rangeSum(int l, int r){
+    long long rangeSum(int l, int r)const{
         return _rangeSum(root, l, r);
     }
-    bool find(int val){
+    bool find(int val)const{
         return _find(root, val);
+    }
+    ll at(size_t index)const{
+        return _at(root, index);
+    }
+    size_t size()const{
+        return _size(root);
     }
 private:
     Tree(const Tree&);
@@ -37,13 +47,18 @@ private:
     Node* _newNode(int val){
         return new Node({val, NULL, NULL, 1});
     }
-    int _height(Node *p){
+    size_t _height(Node *p)const{
         if(p == NULL)
-            return 1;
+            return 0;
         else{
             p->height = max(_height(p->left), _height(p->right)) + 1;
         }
         return p->height;
+    }
+    size_t _size(Node* node)const{
+        if(node == NULL)
+            return 0;
+        return _size(node->left) + _size(node->right) + 1;
     }
     Node* _rightRotate(Node* p){
         Node* child = p->left; 
@@ -65,13 +80,13 @@ private:
 
         return child;
     }
-    int _getBalance(Node *p){
+    int _getBalance(Node *p)const{
         if(p == NULL)
             return 0;
         else
             return _height(p->left) - _height(p->right);
     }
-    Node* _minElement(Node* node){
+    Node* _minElement(Node* node)const{
         if(node != NULL && node->left != NULL)
             return _minElement(node->left);
         return node;
@@ -113,48 +128,54 @@ private:
         }
         return _rebalance(node);
     }
-    Node* _removeNode(Node*& node, int val){
+    Node* _remove(Node*& node, int val){
         if(node == NULL)
             return node;
         if(val < node->data)  
-            node->left = _removeNode(node->left, val);  
+            node->left = _remove(node->left, val);  
         else if(val > node->data) 
-            node->right = _removeNode(node->right, val);  
+            node->right = _remove(node->right, val);  
         else{
-            if(node->left == NULL && node->right == NULL)
-                delete node;
-            else if(node->left == NULL || node->right == NULL){
+             if(node->left == NULL || node->right == NULL){
                 Node* tmp = node->left != NULL ? node->left : node->right;
-                node->data = tmp->data;
-                delete tmp;
+                if(tmp == NULL){
+                    delete node;
+                    node = NULL;
+                }else{
+                    *node = *tmp;
+                    delete tmp;
+                }
             }
             else{
                 Node* tmp = _minElement(node->right);
                 node->data = tmp->data;
-                node->right = _removeNode(node->right, tmp->data);
+                node->right = _remove(node->right, tmp->data);
             }
         }
         if(node == NULL)
             return node;
         return _rebalance(node);
     }
-    void _inorder(Node *p){
+    void _inorder(Node *p)const{
         if(p != NULL){
             _inorder(p->left);
             cout << p->data << " ";
             _inorder(p->right);
         }
     }
-    long long _rangeSum(Node* node, int l, int r){
+    long long _rangeSum(Node* node, int l, int r)const{
         if(node != NULL){
-            long long sum = _rangeSum(node->left, l, r) + _rangeSum(node->right, l, r);
-            if(node->data <= l && node->data >= r)
-                sum += node->data;
-            return sum;
+            if(node->data >= l && node->data <= r)
+                return node->data + _rangeSum(node->left, l, r) 
+                + _rangeSum(node->right, l, r);
+            else if(node->data < l)
+                return _rangeSum(node->right, l, r);
+            else 
+                _rangeSum(node->left, l, r); 
         }
         return 0;
     }
-    bool _find(Node* node, int val){
+    bool _find(Node* node, int val)const{
         if(node == NULL)
             return false;
         if(node->data == val)
@@ -164,30 +185,56 @@ private:
         else 
             return _find(node->right, val);  
     }
-    void _preorder(Node *p){
+    void _preorder(Node *p)const{
         if(p != NULL){
             cout << p->data << " ";
             _preorder(p->left);
             _preorder(p->right);
         }
     }
+    ll _at(Node* node, size_t index)const{ 
+        assert(node != NULL);
+        if(node->left != NULL){
+            ll size = node->left->height + 1;
+            if(size == index)
+                return node->data;
+            if(size > index)
+                return _at(node->left, index);
+            else 
+                return _at(node->right, index - size);
+        }
+        else 
+            if(index == 0)  return node->data;
+        else
+            return _at(node->right, index - 1);
+    }
 };
 int main(){
     Tree tree;  
-    tree.insert(10);  
-    tree.insert(20);  
-    tree.insert(30);  
-    tree.insert(40);  
-    tree.insert(50);  
-    tree.insert(25);
-
-    tree.preorder();
-    cout << endl;
+    ifstream fs("test.txt");
+    assert(fs.is_open());
+   
+    int numOfReq;
+    ll val, l, r;
+    char typeReq;
+    fs >> numOfReq;
+    for(int i = 0; i < numOfReq; ++i){
+        fs >> typeReq;
+        if(typeReq == '+'){
+            fs >> val;
+            tree.insert(val);
+        }else if(typeReq == '-'){
+            fs >> val;
+            tree.remove(val);
+        }else if(typeReq == '?'){
+            fs >> val;
+            cout << (tree.find(val) ? "Found" : "Not found") << endl;
+        }else if(typeReq == 's'){
+            fs >> l >> r;
+            cout << tree.rangeSum(l, r) << endl;
+        }
+    }
     tree.inorder();
-    cout << boolalpha << tree.find(40) << endl;
-    cout << boolalpha << tree.find(21) << endl;
-
-    cout << tree.rangeSum(20, 30);
-
+    cout << endl << tree.at(0) << " " << tree.at(1) << endl;
     return 0;
 }
