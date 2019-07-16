@@ -5,11 +5,11 @@
 
 using namespace std;
 
-typedef long long ll;
 
+template <typename T>
 class Tree{
     struct Node{
-        int data;
+        T data;
         Node* right, *left;
         size_t height;
     };
@@ -17,7 +17,7 @@ class Tree{
 
 public:
     Tree() : root(NULL){}
-    void  insert(int val){
+    void  insert(T val){
         root = _insert(root, val);
     }
     void inorder()const{
@@ -26,16 +26,16 @@ public:
     void preorder()const{
         _preorder(root);
     }
-    void remove(int val){
+    void remove(T val){
         root = _remove(root, val);
     }
-    long long rangeSum(int l, int r)const{
+    long long rangeSum(T l, T r)const{
         return _rangeSum(root, l, r);
     }
-    bool find(int val)const{
+    bool find(T val)const{
         return _find(root, val);
     }
-    ll at(size_t index)const{
+    T at(size_t index)const{
         return _at(root, index);
     }
     size_t size()const{
@@ -44,7 +44,7 @@ public:
 private:
     Tree(const Tree&);
     Tree& operator= (const Tree&);
-    Node* _newNode(int val){
+    Node* _newNode(T val){
         return new Node({val, NULL, NULL, 1});
     }
     size_t _height(Node *p)const{
@@ -163,7 +163,7 @@ private:
             _inorder(p->right);
         }
     }
-    long long _rangeSum(Node* node, int l, int r)const{
+    T _rangeSum(Node* node, T l, T r)const{
         if(node != NULL){
             if(node->data >= l && node->data <= r)
                 return node->data + _rangeSum(node->left, l, r) 
@@ -175,7 +175,7 @@ private:
         }
         return 0;
     }
-    bool _find(Node* node, int val)const{
+    bool _find(Node* node, T val)const{
         if(node == NULL)
             return false;
         if(node->data == val)
@@ -192,10 +192,10 @@ private:
             _preorder(p->right);
         }
     }
-    ll _at(Node* node, size_t index)const{ 
+    T _at(Node* node, size_t index)const{ 
         assert(node != NULL);
         if(node->left != NULL){
-            ll size = node->left->height + 1;
+            size_t size = _size(node->left) + 1;
             if(size == index)
                 return node->data;
             if(size > index)
@@ -210,12 +210,12 @@ private:
     }
 };
 int main(){
-    Tree tree;  
+    Tree<long long> tree;  
     ifstream fs("test.txt");
     assert(fs.is_open());
    
     int numOfReq;
-    ll val, l, r;
+    long long val, l, r;
     char typeReq;
     fs >> numOfReq;
     for(int i = 0; i < numOfReq; ++i){
